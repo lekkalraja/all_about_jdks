@@ -58,4 +58,23 @@
 * G6. Take care when using var with diamond or generic methods.
 * G7. Take care when using var with literals.
 
+## Consolidate the JDK Forest into a Single Repository
+* Combine the numerous repositories of the JDK forest into a single repository in order to simplify and streamline development.
+
+## Garbage Collector Interface
+* Improve the source code isolation of different garbage collectors by introducing a clean garbage collector (GC) interface.
+
+### Goals
+* Better modularity for HotSpot internal GC code
+* Make it simpler to add a new GC to HotSpot without perturbing the current code base
+* Make it easier to exclude a GC from a JDK build
+
+## Parallel Full GC for G1
+* Improve G1 worst-case latencies by making the full(old gen) GC parallel.
+* The G1 garbage collector is designed to avoid full collections, but when the concurrent collections can't reclaim memory fast enough a fall back full GC will occur. The current implementation of the full GC for G1 uses a single threaded mark-sweep-compact algorithm. We intend to parallelize the mark-sweep-compact algorithm and use the same number of threads as the Young and Mixed collections do. The number of threads can be controlled by the `-XX:ParallelGCThreads` option, but this will also affect the number of threads used for Young and Mixed collections.
+
+### Motivation
+* The G1 garbage collector was made the default in JDK 9. The previous default, the parallel collector, has a parallel full GC. To minimize the impact for users experiencing full GCs, the G1 full GC should be made parallel as well.
+
+
 ### Reference : http://openjdk.java.net/projects/jdk/10/ <br> http://openjdk.java.net/projects/amber/LVTIstyle.html <br> http://openjdk.java.net/projects/amber/LVTIFAQ.html
