@@ -1,6 +1,7 @@
-# jdk10_and_beyond
+# All About JDK's
 
-* `JEP - JDK Enhancement Proposals` : All JEPS : (https://openjdk.java.net/jeps/0)
+* `JEP - JDK Enhancement Proposals` :  [JEPS](https://openjdk.java.net/jeps/0)
 
 ## Releases
-1. 10 (GA 2018/03/20)
+1.  [10 (GA 2018/03/20)](http://openjdk.java.net/projects/jdk/10/)
+2.  [11 (GA 2018/09/25)](http://openjdk.java.net/projects/jdk/11/)
