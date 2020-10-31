@@ -1,20 +1,6 @@
 # JAVA 10
 
-##### Deprecations & Removals
-*   Removed command-line tools/options
-    * - javah -> `javac -h <dir>`
-    - policytool
-    - -X:prof -> jmap & 3rd party profilers
-
-*   API's
-    *   - java.security.acl -> java.security
-    - java.security.{Certificate, Identity, IdentityScope, Signer}
-    - javax.security.auth.Policy -> java.security.Policy
-
-
-# Features
-
-## Local-Variable Type Inference
+## JEP 286: Local-Variable Type Inference
 
 ##### Java SE 10 introduced type inference for local variables. Previously, all local variable declarations required an explicit (manifest) type on the left-hand side.
 
@@ -58,10 +44,10 @@
 * G6. Take care when using var with diamond or generic methods.
 * G7. Take care when using var with literals.
 
-## Consolidate the JDK Forest into a Single Repository
+## JEP 296: Consolidate the JDK Forest into a Single Repository
 * Combine the numerous repositories of the JDK forest into a single repository in order to simplify and streamline development.
 
-## Garbage Collector Interface
+## JEP 304: Garbage Collector Interface
 * Improve the source code isolation of different garbage collectors by introducing a clean garbage collector (GC) interface.
 
 ### Goals
@@ -69,14 +55,14 @@
 * Make it simpler to add a new GC to HotSpot without perturbing the current code base
 * Make it easier to exclude a GC from a JDK build
 
-## Parallel Full GC for G1
+## JEP 307: Parallel Full GC for G1
 * Improve G1 worst-case latencies by making the full(old gen) GC parallel.
 * The G1 garbage collector is designed to avoid full collections, but when the concurrent collections can't reclaim memory fast enough a fall back full GC will occur. The current implementation of the full GC for G1 uses a single threaded mark-sweep-compact algorithm. We intend to parallelize the mark-sweep-compact algorithm and use the same number of threads as the Young and Mixed collections do. The number of threads can be controlled by the `-XX:ParallelGCThreads` option, but this will also affect the number of threads used for Young and Mixed collections.
 
 ### Motivation
 * The G1 garbage collector was made the default in JDK 9. The previous default, the parallel collector, has a parallel full GC. To minimize the impact for users experiencing full GCs, the G1 full GC should be made parallel as well.
 
-## Application Class-Data Sharing
+## JEP 310: Application Class-Data Sharing
 
 * To improve startup and footprint, extend the existing Class-Data Sharing ("CDS") feature to allow application classes to be placed in the shared archive.
 
@@ -157,7 +143,9 @@ total    :   9050456 [100.0% of total] out of   9060352 bytes [ 99.9% used]
 * To analyse class-path related stuff add `-Xlog:class+path=info`
 
 ```java
-java -Xshare:on -XX:+UseAppCDS -XX:SharedArchiveFile=hello.jsa -Xlog:class+path=info -cp hello.jar Hello
+> java -Xshare:on -XX:+UseAppCDS -XX:SharedArchiveFile=hello.jsa -Xlog:class+path=info -cp hello.jar 
+Hello
+
 Java HotSpot(TM) 64-Bit Server VM warning: Ignoring obsolete option UseAppCDS; AppCDS is automatically enabled
 [0.003s][info][class,path] bootstrap loader class path=/usr/lib/jvm/jdk-11/lib/modules
 [0.003s][info][class,path] opened: /usr/lib/jvm/jdk-11/lib/modules
@@ -197,5 +185,56 @@ Hello, World!
 
 * Platform and system class loaders: The HotSpot VM recognizes class-loading requests from the built-in platform and system class loaders. When these loaders request a class that exists in the CDS archive then the VM skips the usual class-file parsing and verification steps and loads the archived copied of the class.
 * Custom class loaders: When a custom class loader invokes ClassLoader::defineClass, the VM attempts to match the contents of the class file with an archived class by comparing fingerprints of the class-file data. If a match is found, the VM skips the class-file parsing and verification steps and directly loads the archived copy of the class.
+
+## JEP 312: Thread-Local Handshakes
+* A handshake operation is a callback that is executed for each JavaThread while that thread is in a safepoint safe state. The callback is executed either by the thread itself or by the VM thread while keeping the thread in a blocked state. The big difference between safepointing and handshaking is that the per thread operation will be performed on all threads as soon as possible and they will continue to execute as soon as it’s own operation is completed. If a JavaThread is known to be running, then a handshake can be performed with that single JavaThread as well.
+
+## JEP 313: Remove the Native-Header Generation Tool (javah)
+* The tool has been superseded by superior functionality in javac, added in JDK 8 (JDK-7150368). This functionality provides the ability to write native header files at the time that Java source code is compiled, thereby eliminating the need for a separate tool.
+
+* Focusing on the support provided by javac eliminates the need to upgrade javah to support recent new paradigms, such as API access via the Compiler API in javax.tools.*, or the new java.util.spi.ToolProvider SPI added in JDK 9.
+
+## JEP 314: Additional Unicode Language-Tag Extensions
+
+* Enhance java.util.Locale and related APIs to implement additional Unicode extensions of BCP 47 language tags.
+
+## JEP 316: Heap Allocation on Alternative Memory Devices
+
+* Enable the HotSpot VM to allocate the Java object heap on an alternative memory device, such as an NV-DIMM, specified by the user.
+
+#### Motivation
+* With the availability of cheap NV-DIMM memory, future systems may be equipped with heterogeneous memory architectures. One example of such technology is Intel's 3D XPoint. Such an architecture, in addition to DRAM, will have one or more types of non-DRAM memory with different characteristics.
+* This JEP targets alternative memory devices that have the same semantics as DRAM, including the semantics of atomic operations, and can therefore be used instead of DRAM for the object heap without any change to existing application code. All other memory structures such as the code heap, metaspace, thread stacks, etc., will continue to reside in DRAM.
+
+* Some use cases for this proposal are:
+
+  1. In multi-JVM deployments some JVMs such as daemons, services, etc., have lower priority than others. NV-DIMMs would potentially have higher access latency compared to DRAM. Low-priority processes can use NV-DIMM memory for the heap, allowing high-priority processes to use more DRAM.
+
+  2. Applications such as big data and in-memory databases have an ever-increasing demand for memory. Such applications could use NV-DIMM for the heap since NV-DIMMs would potentially have a larger capacity, at lower cost, compared to DRAM.
+
+#### Description
+
+* Some operating systems already expose non-DRAM memory through the file system. Examples are NTFS DAX mode and ext4 DAX. Memory-mapped files in these file systems bypass the page cache and provide a direct mapping of virtual memory to the physical memory on the device.
+
+* To allocate the heap in such memory we can add a new option, `-XX:AllocateHeapAt=<path>`. This option would take a path to the file system and use memory mapping to achieve the desired result of allocating the object heap on the memory device. The JEP does not intend to share a non-volatile region between multiple running JVMs or re-use the same region for further invocations of the JVM.
+
+* The existing heap related flags such as -Xmx, -Xms, etc., and garbage-collection related flags would continue to work as before.
+
+* To ensure application security the implementation must ensure that file(s) created in the file system are:
+  1. Protected by correct permissions, to prevent other users from accessing it.
+  2. Removed when the application terminates, in any possible scenario.
+
+## JEP 317: Experimental Java-Based JIT Compiler
+* Enable the Java-based JIT compiler, Graal, to be used as an experimental JIT compiler on the Linux/x64 platform.
+* Graal, a Java-based JIT compiler, is the basis of the experimental Ahead-of-Time (AOT) compiler introduced in JDK 9. Enabling it to be used as an experimental JIT compiler is one of the initiatives of Project Metropolis, and is the next step in investigating the feasibility of a Java-based JIT for the JDK.
+* Enable Graal to be used as an experimental JIT compiler, starting with the Linux/x64 platform. Graal will use the JVM compiler interface (JVMCI) introduced in JDK 9. Graal is already in the JDK, so enabling it as an experimental JIT will primarily be a testing and debugging effort. To enable Graal as the JIT compiler, use the following options on the java command line:
+  `java -XX:+UnlockExperimentalVMOptions -XX:+UseJVMCICompiler`
+
+##  JEP 319: Root Certificates
+* Provide a default set of root Certification Authority (CA) certificates in the JDK.
+
+## JEP 322: Time-Based Release Versioning
+* Revise the version-string scheme of the Java SE Platform and the JDK, and related versioning information, for present and future time-based release models.
+  `$FEATURE.$INTERIM.$UPDATE.$PATCH`
 
 ### Reference : http://openjdk.java.net/projects/jdk/10/ <br> http://openjdk.java.net/projects/amber/LVTIstyle.html <br> http://openjdk.java.net/projects/amber/LVTIFAQ.html

@@ -1,2 +1,6 @@
 # jdk10_and_beyond
-This Repository includes all the new features which was introduced in Java10 and subsequent releases like 11, 12, 13, 14, 15... and so on
+
+* `JEP - JDK Enhancement Proposals` : All JEPS : (https://openjdk.java.net/jeps/0)
+
+## Releases
+1. 10 (GA 2018/03/20)
