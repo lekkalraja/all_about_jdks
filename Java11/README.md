@@ -51,4 +51,17 @@
 * java.lang.Class:getNestHost, getNestMembers and isNestmateOf
 
 
+## JEP 309: Dynamic Class-File Constants
+
+* Extend the java class-file format to support a new constant-pool form, CONSTANT_Dynamic. Loading a CONSTAT_Dynamic will delegate creation to a bootstrap method, just as linking an invokedynamic call site delegates linkage to a bootstrap method.
+
+## JEP 315: Improve Aarch64 Intrinsics
+
+* Imporve the existing string and array `intrinsics`, and implement new intrinsics for the java.lang.Math sin, cos and log functions on AArch64 processors.
+* `Intrinsics` are used to leverage CPU architecture-specific assembly code which is executed instead of generic java code for a given method to imporve performance.
+* While most of the intrinsics are already implemented in AArch64 port, optimized intrinsics for the sin, cos, log java.lang.Math methods are still missing.
+* This JEP is intended to cover gap by implementing optimized intrinsics for above methods at the same time, while most of the intrinsics are already implemented in the AArch64 port, the current implementation of some intrinsics may not be optimal.
+* Specifically, some intrinsics for AArch64 architectures may benefit from software prefetching instructions, memory address alignment, instructions placement for mult-pipeline CPUs, and the replacement of certain instruction patterns with faster ones or with SIMD instructions.
+* This includes (but is not limited to) such typical operations as String::compareTo, String::indexOf, StringCoding::hasNegatives, Arrays::equals, StringUTF16::compress, StringLatin1::inflate and various checksum claculations.
+  
 # Reference : [Java 11](http://openjdk.java.net/projects/jdk/11/)
