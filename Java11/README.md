@@ -64,4 +64,29 @@
 * Specifically, some intrinsics for AArch64 architectures may benefit from software prefetching instructions, memory address alignment, instructions placement for mult-pipeline CPUs, and the replacement of certain instruction patterns with faster ones or with SIMD instructions.
 * This includes (but is not limited to) such typical operations as String::compareTo, String::indexOf, StringCoding::hasNegatives, Arrays::equals, StringUTF16::compress, StringLatin1::inflate and various checksum claculations.
   
+## JEP 318: Epsilon: A No-Op Garbage Collector (Experimental)
+
+* A Garbage Collector that handles memory allocaiton but does not implement any actual memory reclamation mechanism. Once the available Java heap is exhausted, the JVM will shut down.
+* Provides a Completely passive GC implementation with a bounded allocation limit and the lowest latency overhead possible, at the expense of memory footprint and memory throughput.
+* A successful implementation is an isolated code change, does not touch other GCs, and makes minimal changes in the rest of JVM.
+
+* There are a few use cases where a trivial no-op GC proves useful:
+  - Performance testing
+  - Memory pressure testing
+  - VM interface testing
+  - Extremely short lived jobs
+  - Last-drop latency improvements
+  - Last-drop throughput improvements
+
+* Epsilon GC looks and feels like any other OpenJDK GC, enabled with `-XX:+UseEpsionGC`
+* Epsilon GC works by implementing linear allocaiton in a single contiguous chunk of allocated memory.
+* The barrier set used by Epsilon is completely empty/no-op, because the GC does not do any GC cycles, and therefore does not care about the object graph, object marking, object copying, etc..
+* Since the only important part of the runtime interface for Epsilon is that for issuing TLAB (thread-local allocated buffer), it's latency largely depends on the TLAB size issued. With arbitarily large TLABs and arbitarily large heap, the latency overhead can be described b an arbitarily low positive value, hence the name. (Alternative origin story: `epsilon` frequently means `empty symbol`), which is aligned with the no-op nature of this GC)
+* Once the Java heap is exhausted, no allocaiton is possible, no memory reclamation is possible,  and therefore we have to fail. There are several options at that point; most are in line with what existing GCs do
+    * Throw OutOfMemoryError with a descriptive message
+    * Perform a heap dump (enabled, as usual, with `-XX:+HeapDumpOnOutOfMemoryError`)
+    * Fail the JVM hard and optionally perform external action (through the usual `-XX:OnOutOfMemoryError=...`)
+
+* There is nothing to be done on `System.gc()` call, because no memory relcamation code is implemented.
+
 # Reference : [Java 11](http://openjdk.java.net/projects/jdk/11/)
