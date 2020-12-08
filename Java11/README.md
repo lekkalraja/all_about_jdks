@@ -89,4 +89,38 @@
 
 * There is nothing to be done on `System.gc()` call, because no memory relcamation code is implemented.
 
+## JEP 320: Remove the Java EE and CORBA Modules
+
+* Java SE 6 included a full Web Services stack for the convenience of Java developers. The stack consisted of four technologies that were originally developed for the Java EE Platform
+    *  JAX-WS (Java API for XML-Based Web Services)
+    *  JAXB (Java Architecture for XML Binding)
+    *  JAF (the JavaBeans Activation Framework)
+    *  Common Annotations
+* The Java EE technologies are readily available from third-party sites, such as Maven Central, there is no need for the Java SE Platform or the JDK to include them.
+
+* In Java SE 9, the Java SE modules that contain Java EE and CORBA technologies are annotated as deprecated for removal, indicating the intent to remove them in a future release:
+
+    1. java.xml.ws (JAX-WS, plus the related technologies SAAJ and Web Services Metadata)
+    2. java.xml.bind (JAXB)
+    3. java.activation (JAF)
+    4. java.xml.ws.annotation (Common Annotations)
+    5. java.corba (CORBA)
+    6. java.transaction (JTA)
+* Related modules in Java SE 9 are also deprecated for removal:
+    7. java.se.ee (Aggregator module for the six modules above)
+    8. jdk.xml.ws (Tools for JAX-WS)
+    9. jdk.xml.bind (Tools for JAXB)
+
+* This JEP will remove the nine modules listed above:
+    * Their source code will be deleted from the OpenJDK repository.
+    * Their classes will not exist in the JDK runtime image.
+    * Their tools will no longer be available:
+    * wsgen and wsimport (from jdk.xml.ws)
+    * schemagen and xjc (from jdk.xml.bind)
+    * idlj, orbd, servertool, and tnamesrv (from java.corba)
+    * The JNDI CosNaming provider (from java.corba) will no longer be available.
+    * No command line flag will be capable of enabling them, as --add-modules does on JDK 9.
+    * The rmic compiler will be updated to remove the -idl and -iiop options. Consequently, rmic will no longer be able to generate IDL or IIOP stubs and tie classes.
+
+
 # Reference : [Java 11](http://openjdk.java.net/projects/jdk/11/)
