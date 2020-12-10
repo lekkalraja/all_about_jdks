@@ -122,5 +122,73 @@
     * No command line flag will be capable of enabling them, as --add-modules does on JDK 9.
     * The rmic compiler will be updated to remove the -idl and -iiop options. Consequently, rmic will no longer be able to generate IDL or IIOP stubs and tie classes.
 
+## JEP 321: HTTP Client
+
+* Define a new HTTP client API that implements HTTP/2 and WebSocket, and can replace the legacy HttpURLConnection API
+* The existing HttpURLConnection API and its implementation have numerous problems:
+    * The base URLConnection API was designed with multiple protocols in mind, nearly all of which are now defunct (ftp, gopher, etc.).
+    * The API predates HTTP/1.1 and is too abstract.
+    * It is hard to use, with many undocumented behaviors.
+    * It works in blocking mode only (i.e., one thread per request/response).
+    * It is very hard to maintain.
+#### Goals
+
+* Must be easy to use for common cases, including a simple blocking mode.
+* Must provide notification of events such as "headers received", errors, and "response body received". This notification is not necessarily based on callbacks but can use an asynchronous mechanism like `CompletableFuture`.
+* A simple and concise API which caters for 80-90% of application needs. This probably means a relatively small API footprint that does not necessarily expose all the capabilities of the protocol.
+* Must expose all relevant aspects of the HTTP protocol request to a server, and the response from a server (headers, body, status codes, etc.).
+* Must support standard and common authentication mechanisms. This will initially be limited to just Basic authentication.
+* Must be able to easily set up the WebSocket handshake.
+* Must support HTTP/2. (The application-level semantics of HTTP/2 are mostly the same as 1.1, though the wire protocol is completely different.)
+* Must be able to negotiate an upgrade from 1.1 to 2 (or not), or select 2 from the start.
+* Must support server push, i.e., the ability of the server to push resources to the client without an explicit request by the client.
+* Must perform security checks consistent with the existing networking API.
+* Should be friendly towards new language features such as lambda expressions.
+* Should be friendly towards embedded-system requirements, in particular the avoidance of permanently running timer threads.
+* Must support HTTPS/TLS.
+    * Performance requirements for HTTP/1.1:
+    * Performance must be on par with the existing HttpURLConnection implementation.
+    * Performance must be on par with the Apache HttpClient library and with Netty and Jetty when used as a client API.
+    * Memory consumption of the new API must be on par or lower than that of HttpURLConnection, Apache HttpClient, and Netty and Jetty when used as a client API.
+* Performance requirements for HTTP/2:
+* Performance must be better than HTTP/1.1 in the ways expected by the new protocol (i.e., in scalability and latency), notwithstanding any platform limitations (e.g., TCP segment ack windows).
+* Performance must be on par with Netty and Jetty when used as a client API for HTTP/2.
+* Memory consumption of the new API must be on par or lower than when using HttpURLConnection, Apache HttpClient, and Netty and Jetty when used as a client API.
+* Provide a standardized API, in the java.net.http package, based upon the incubated API, and
+Remove the incubated API. 
+
+* The API provides non-blocking request and response semantics through CompletableFutures, which can be chained to trigger dependent actions. 
+* Back-pressure and flow-control of request and response bodies is provided for via the Platform's `reactive-streams` support in the java.util.concurrent.Flow API.
+* The implementation is now completely asynchronous (the previous HTTP/1.1 implementation was blocking)
+* Use of the RX Flow concept has been pushed down into the implementation, which eliminated many of the original custom concepts needed to support HTTP/2. 
+* The flow of data can now be more easily traced, from the user-level request publishers and response subscribers all the way down to the underlying socket. 
+* This significantly reduces the number of concepts and complexity in the code, and maximizes the possibility of reuse between HTTP/1.1 and HTTP/2.
+* The module name and the package name of the standard API will be java.net.http.
+
+##### Changes over what was incubated in JDK 10
+  1. The predefined implementation of BodyPublisher, BodyHandler, and BodySubscriber, created through static factory methods, have been moved out to separate non-instantiable utility factory classes, following the pluralized naming convention. This improves readability of these relatively small interfaces.
+  2. The names of the static factory methods have also been updated along the following broad categories:
+     1. fromXxx: Adapters from standard Subscriber, e.g. takes a Flow.Subscriber returns a BodySubscriber
+     2. ofXxx: Factories that create a new pre-defined Body[Publisher|Handler|Subscriber] that perform useful common tasks, such as handling the response body as a String, or streaming the body to a File.
+     3. other: Combinators (takes a BodySubscriber returns a BodySubscriber) and other useful operations.
+  3. A few BodyHandlers and corresponding BodySubscribers have been added, to improve usability in common scenarios:
+     1. discard(Object replacement) combined discarding/ignoring the response body and allowing a given replacement. Feedback has indicated that this could appear confusing. It has been removed and replaced with two separate handlers: 1) discarding(), and 2) replacing(Object replacement).
+     2. Added ofLines() that returns a BodyHandler<Stream<String>>, to support streaming of response body as a Stream of lines, line by line. Provides similar semantics to that of BufferedReader.lines().
+     3. Added fromLineSubscriber​, that supports adaptation of response body to a Flow.Subscriber of String lines.
+     4. Added BodySubscriber.mapping for general purpose mapping from one response body type to another.
+     5. The push promise support has been re-worked to reduce its impact on the API and bring it more in line with regular request/responses. Specifically, the MultiSubscriber and MultiResultMap have been removed. Push promises are now handled through a functional interface, PushPromiseHandler, that is optionally given during a send operation.
+     6. The HttpClient.Redirect policy has been simplified, by replacing SAME_PROTOCOL and SECURE policies, with NORMAL. It has been observed that the previously named SECURE was not really appropriately named and should be renamed to NORMAL, since it will likely be suitable for most normal cases. Given the newly named, aforementioned, NORMAL, SAME_PROTOCOL appears oddly named, possibly confusing, and not likely to be used.
+     7. WebSocket.MessagePart has been removed. This enum was used on the receiving side to indicate whether the delivery of a message is complete, or not. It is asymmetric with the sending side, which uses a simple boolean for this purpose. Additionally, it has been observed that handling received messages with a simple boolean significantly reduces and simplifies the receiving code logic. Determination of messages being delivered as a WHOLE, one of the benefits and the main purposes for the aforementioned MessagePart, has proved to not carry its own weight.
+
+###### Sample
+    ```java
+
+    > java Java11/NewHttpClient.java  => Have Both Sync and Async versions of HttpClient-Get Calls
+    
+    ```
+
+##### Alternatives
+
+* A number of existing HTTP client APIs and implementations exist, e.g., Jetty and the Apache HttpClient. Both of these are both rather heavy-weight in terms of the numbers of packages and classes, and they don't take advantage of newer language features such as lambda expressions.
 
 # Reference : [Java 11](http://openjdk.java.net/projects/jdk/11/)
