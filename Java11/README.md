@@ -191,4 +191,33 @@ Remove the incubated API.
 
 * A number of existing HTTP client APIs and implementations exist, e.g., Jetty and the Apache HttpClient. Both of these are both rather heavy-weight in terms of the numbers of packages and classes, and they don't take advantage of newer language features such as lambda expressions.
 
+## JEP 323: Local-Variable Syntax for Lambda Parameters
+* Allow var to be used when declaring the formal parameters of implicitly typed lambda expressions.
+* Align the syntax of a formal parameter declaration in an implicitly typed lambda expression with the syntax of a local variable declaration.
+* For uniformity with local variables, we wish to allow 'var' for the formal parameters of an implicitly typed lambda expression:
+  `(var x, var y) -> x.process(y)   // implicit typed lambda expression`
+* One benefit of uniformity is that modifiers, notably annotations, can be applied to local variables and lambda formals without losing brevity:
+
+```java
+@Nonnull var x = new Foo();
+(@Nonnull var x, @Nullable var y) -> x.process(y)
+```
+* For formal parameters of implicitly typed lambda expressions, allow the reserved type name var to be used, so that:
+```java
+(var x, var y) -> x.process(y) is equivalent to: (x, y) -> x.process(y)
+```
+
+* An implicitly typed lambda expression must use var for all its formal parameters or for none of them. In addition, var is permitted only for the formal parameters of implicitly typed lambda expressions --- explicitly typed lambda expressions continue to specify manifest types for all their formal parameters, so it is not permitted for some formal parameters to have manifest types while others use var. 
+
+* The following examples are illegal:
+(var x, y) -> x.process(y)         // Cannot mix 'var' and 'no var' in implicitly typed lambda expression
+(var x, int y) -> x.process(y)     // Cannot mix 'var' and manifest types in explicitly typed lambda expression
+
+###### Sample
+
+```java
+ > java Java11/LocalVariableSyntaxForLambda.java
+```
+
+
 # Reference : [Java 11](http://openjdk.java.net/projects/jdk/11/)
