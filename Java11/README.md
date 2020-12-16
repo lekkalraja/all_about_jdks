@@ -260,4 +260,124 @@ byte[] secret = ka.generateSecret();
     * Bidi, BreakIterator, and Normalizer in the java.text package.
 * Java SE 10 implements Unicode 8.0. Unicode 9.0 adds 7,500 characters and six new scripts, and Unicode 10.0.0 adds 8,518 characters and four new scripts. This upgrade will include the Unicode 9.0 changes, and thus will add a total of 16,018 characters and ten new scripts.
 
+## JEP 328: Flight Recorder
+
+* Provides a low-overhead data collection framework for troubleshooting Java applications and the HotSpot JVM.
+* Provide APIs for producing and consuming data as events
+* Provide a buffer mechanism and a binary data format
+* Allow the configuration and filtering of events
+* Provide events for the OS, the HotSpot JVM, and the JDK libraries
+
+###### Non-Goals
+* Provide visualization or analysis of collected data
+* Enable data collection by default
+
+#### Motivation
+* Troubleshooting, monitoring and profiling are integral parts of the development lifecycle, but some problems occur only in production, under heavy load involving real data.
+* Flight Recorder records events originating from applications, the JVM and the OS. Events are stored in a single file that can be attached to bug reports and examined by support engineers, allowing after-the-fact analysis of issues in the period leading up to a problem. 
+* Tools(`Java Mission Control (JMC)`) can use an API to extract information from recording files.
+
+* JEP 167: Event-Based JVM Tracing added an initial set of events to the HotSpot JVM. Flight Recorder will extend the ability to create events to Java.
+* JEP 167 also added a rudimentary backend, where data from events are printed to stdout. Flight Recorder will provide a single high-performance backend for writing events in a binary format.
+  
+##### Modules:
+    * jdk.jfr
+        * API and internals
+        * Requires only java.base (suitable for resource constrained devices)
+    * jdk.management.jfr
+        * JMX capabilities
+        * Requires jdk.jfr and jdk.management
+
+* Flight Recorder can be started on the command line: `$ java -XX:StartFlightRecording ...`
+  
+* Recordings may also be started and controlled using the bin/jcmd tool:
+```shell
+$ jcmd <pid> JFR.start
+$ jcmd <pid> JFR.dump filename=recording.jfr
+$ jcmd <pid> JFR.stop
+
+```
+* This functionality is provided remotely over JMX, useful for tools such as `Mission Control`.
+
+##### Producing and consuming events
+There is an API for users to create their own events:
+
+```java
+
+import jdk.jfr.*;
+
+@Label("Hello World")
+@Description("Helps the programmer getting started")
+class HelloWorld extends Event {
+   @Label("Message")
+   String message;
+}
+
+public static void main(String... args) throws IOException {
+    HelloWorld event = new HelloWorld();
+    event.message = "hello, world!";
+    event.commit();
+}
+```
+* Data can be extracted from recording files using classes available in jdk.jfr.consumer:
+
+```java
+
+import java.nio.file.*;
+import jdk.jfr.consumer.*;
+
+Path p = Paths.get("recording.jfr");
+for (RecordedEvent e : RecordingFile.readAllEvents(p)) {
+   System.out.println(e.getStartTime() + " : " + e.getValue("message"));
+}
+
+```
+##### Buffer mechanism and binary data format
+
+* Threads write events, lock-free, to thread-local buffers. Once a thread-local buffer fills up, it is promoted to a global in-memory circular buffer system which maintains the most recent event data. 
+* Depending on configuration, the oldest data is either discarded or written to disk allowing the history to be continuously saved. 
+* Binary files on disk have the extension `.jfr` and are maintained and controlled using a `retention policy`.
+* The event model is implemented in a self-describing binary format, encoded in little endian base 128 (except for the file header and some additional sections). 
+* The binary data format is not to be used directly as it is subject to change. Instead, APIs will be provided for interacting with recording files.
+  
+* As an illustrative example, the class load event contains a time stamp describing when it occurred, a duration describing the timespan, the thread, a stack trace as well as three event specific payload fields, the loaded class and the associated class loaders. 
+* The size of the event is 24 bytes in total.
+
+```language
+
+<memory address>: 98 80 80 00 87 02 95 ae e4 b2 92 03 a2 f7 ae 9a 94 02 02 01 8d 11 00 00
+Event size [98 80 80 00]
+Event ID [87 02]
+Timestamp [95 ae e4 b2 92 03]
+Duration [a2 f7 ae 9a 94 02]
+Thread ID [02]
+Stack trace ID [01]
+Payload [fields]
+Loaded Class: [0x8d11]
+Defining ClassLoader: [0]
+Initiating ClassLoader: [0]
+
+```
+
+#### Configure and filter events
+* Events can be enabled, disabled, and filtered to reduce overhead and the amount of space needed for storage. This can be accomplished using the following settings:
+  - `enabled` - should the event be recorded
+  - `threshold` - the duration below which an event is not recorded
+  - `stackTrace` - if the stack trace from the Event.commit() method should be recorded
+  - `period` - the interval at which the event is emitted, if it is periodic
+
+* There are two configuration sets that are tailored to configure Flight Recorder for the low-overhead, out-of-the-box use case. A user can easily create their own specific event configuration.
+
+##### OS, JVM and JDK library events
+
+Events will be added covering the following areas:
+- `OS`  : Memory, CPU Load and CPU information, native libraries, process information
+- `JVM` : Flags, GC configuration, compiler configuration, Method profiling event, Memory leak event
+- `JDK` : Socket IO, File IO, Exceptions and Errors, modules
+
+* An alternative to Flight Recorder is logging. Although JEP 158: Unified JVM Logging provides some level of uniformity across subsystems in the HotSpot JVM, it does not extend to Java applications and the JDK libraries. Traditionally, logging usually lacks an explicit model and metadata making it free form with the consequence that consumers must be tightly coupled to internal formats. Without a relational model, it is difficult to keep data compact and normalized.
+  
+* Flight Recorder has existed for many years and was previously a commercial feature of the Oracle JDK. This JEP moves the source code to the open repository to make the feature generally available. Hence, the risk to compatibility, performance, regressions and stability is low.
+
+
 # Reference : [Java 11](http://openjdk.java.net/projects/jdk/11/)
