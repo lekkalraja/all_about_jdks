@@ -251,4 +251,13 @@ byte[] secret = ka.generateSecret();
 
 ```
 
+## JEP 327: Unicode 10
+
+* Upgrade existing platform APIs to support version 10.0 of the Unicode Standard.
+* Support the latest version of Unicode, mainly in the following classes:
+    * Character and String in the java.lang package,
+    * NumericShaper in the java.awt.font package, and
+    * Bidi, BreakIterator, and Normalizer in the java.text package.
+* Java SE 10 implements Unicode 8.0. Unicode 9.0 adds 7,500 characters and six new scripts, and Unicode 10.0.0 adds 8,518 characters and four new scripts. This upgrade will include the Unicode 9.0 changes, and thus will add a total of 16,018 characters and ten new scripts.
+
 # Reference : [Java 11](http://openjdk.java.net/projects/jdk/11/)
