@@ -219,5 +219,36 @@ Remove the incubated API.
  > java Java11/LocalVariableSyntaxForLambda.java
 ```
 
+## JEP 324: Key Agreement with Curve25519 and Curve448
+
+* RFC 7748 defines a key agreement scheme that is more efficient and secure than the existing elliptic curve Diffie-Hellman (ECDH) scheme. The primary goal of this JEP is an API and an implementation for this standard. Additional implementation goals are:
+    * Develop a platform-independent, all-Java implementation with better performance than the existing ECC (native C) code at the same security strength.
+    * Ensure that the timing is independent of secrets, assuming the platform performs 64-bit integer addition/multiplication in constant time. In addition, the implementation will not branch on secrets. These properties are valuable for preventing side-channel attacks.
+* Cryptography using Curve25519 and Curve448 is in demand due to their security and performance properties. Key exchange using these curves is already supported in many other crypto libraries such as OpenSSL, BoringSSL, and BouncyCastle. This key exchange mechanism is an optional component of TLS 1.3, and is enabled in earlier TLS versions through commonly-used extensions.
+
+* The X25519 and X448 functions will be implemented as described in RFC 7748, and these functions will be used to implement new KeyAgreement, KeyFactory, and KeyPairGenerator services in the existing SunEC provider. 
+* The implementation will use the constant-time Montgomery ladder method described in RFC 7748 in order to prevent side channel attacks. The implementation will ensure contributory behavior by comparing the result to 0 as described in the RFC.
+
+```java
+
+Example API usage:
+
+KeyPairGenerator kpg = KeyPairGenerator.getInstance("XDH");
+NamedParameterSpec paramSpec = new NamedParameterSpec("X25519");
+kpg.initialize(paramSpec); // equivalent to kpg.initialize(255)
+// alternatively: kpg = KeyPairGenerator.getInstance("X25519")
+KeyPair kp = kpg.generateKeyPair();
+
+KeyFactory kf = KeyFactory.getInstance("XDH");
+BigInteger u = ...
+XECPublicKeySpec pubSpec = new XECPublicKeySpec(paramSpec, u);
+PublicKey pubKey = kf.generatePublic(pubSpec);
+
+KeyAgreement ka = KeyAgreement.getInstance("XDH");
+ka.init(kp.getPrivate());
+ka.doPhase(pubKey, true);
+byte[] secret = ka.generateSecret();
+
+```
 
 # Reference : [Java 11](http://openjdk.java.net/projects/jdk/11/)
