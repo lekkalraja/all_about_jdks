@@ -379,5 +379,30 @@ Events will be added covering the following areas:
   
 * Flight Recorder has existed for many years and was previously a commercial feature of the Oracle JDK. This JEP moves the source code to the open repository to make the feature generally available. Hence, the risk to compatibility, performance, regressions and stability is low.
 
+## JEP 329: ChaCha20 and Poly1305 Cryptographic Algorithms
+
+* Implement the ChaCha20 and ChaCha20-Poly1305 ciphers as specified in RFC 7539. ChaCha20 is a relatively new stream cipher that can replace the older, insecure RC4 stream cipher.
+* Provide ChaCha20 and ChaCha20-Poly1305 Cipher implementations. These algorithms will be implemented in the SunJCE provider.
+* Provide a KeyGenerator implementation that creates keys suitable for ChaCha20 and ChaCha20-Poly1305 algorithms.
+* Provide an AlgorithmParameters implementation for use with the ChaCha20-Poly1305 algorithm.
+* The only other widely adopted stream cipher, RC4, has long been deemed insecure. The industry consensus is that ChaCha20-Poly1305 is secure at this point in time, and it has seen fairly wide adoption across TLS implementations as well as in other cryptographic protocols. The JDK needs to be on par with other cryptographic toolkits and TLS implementations.
+* Additionally, TLS 1.3 only allows the use of AEAD-based cipher suites. Implementing the ChaCha20-Poly1305 algorithm is the first step in implementing different cipher suites that run in AEAD mode in case there were ever weaknesses to be found in AES or GCM.
+
+
+```java
+//A sample single-part encryption follows:
+
+// Get a Cipher instance and set up the parameters
+// Assume SecretKey "key", 12-byte nonce "nonceBytes" and plaintext "pText"
+// are coming from outside this code snippet
+Cipher mambo = Cipher.getInstance("ChaCha20-Poly1305");
+AlgorithmParameterSpec mamboSpec = new IvParameterSpec(nonceBytes);
+
+// Encrypt our input
+mambo.init(Cipher.ENCRYPT_MODE, key, mamboSpec);
+byte[] encryptedResult = new byte[mambo.getOutputSize(pText.length)];
+mambo.doFinal(pText, 0, pText.length, encryptedResult);
+
+```
 
 # Reference : [Java 11](http://openjdk.java.net/projects/jdk/11/)
