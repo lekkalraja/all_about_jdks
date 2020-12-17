@@ -446,4 +446,22 @@ mambo.doFinal(pText, 0, pText.length, encryptedResult);
     * `Warning`: The jjs tool is planned to be removed from a future JDK release.
 * A separate JEP will be filed for the actual removal of the types and modules in a future JDK feature release.
 
+## JEP 336: Deprecate the Pack200 Tools and API
+* Deprecate the pack200 and unpack200 tools, and the Pack200 API in java.util.jar.
+
+* Pack200 is a compression scheme for JAR files. It was introduced in Java SE 5.0 by JSR 200. Its goal is "to decrease disk and bandwidth requirements for Java application packaging, transmission, and delivery." Developers use a pair of tools -- pack200 and unpack200 -- to compress and uncompress their JAR files. An API is available in the java.util.jar package.
+
+* There are three reasons for wanting to deprecate (and eventually remove) Pack200:
+    * Historically, slow downloads of the JDK over 56k modems were an impediment to Java adoption. The relentless growth in JDK functionality caused the download size to swell, further impeding adoption. Compressing the JDK with Pack200 was a way to mitigate the problem. However, time has moved on: download speeds have improved, and JDK 9 introduced new compression schemes for both the Java runtime (JEP 220) and the modules used to build the runtime (JMOD). Consequently, JDK 9 and later do not rely on Pack200; JDK 8 was the last release compressed with pack200 at build time and uncompressed with unpack200 at install time. In summary, a major consumer of Pack200 -- the JDK itself -- no longer needs it.
+    * Beyond the JDK, it was attractive to compress client applications, and especially applets, with Pack200. Some deployment technologies, such as Oracle's browser plug-in, would uncompress applet JARs automatically. However, the landscape for client applications has changed, and most browsers have dropped support for plug-ins. Consequently, a major class of consumers of Pack200 -- applets running in browsers -- are no longer a driver for including Pack200 in the JDK.
+    * Pack200 is a complex and elaborate technology. Its file format is tightly coupled to the class file format and the JAR file format, both of which have evolved in ways unforeseen by JSR 200. (For example, JEP 309 added a new kind of constant pool entry to the class file format, and JEP 238 added versioning metadata to the JAR file format.) The implementation in the JDK is split between Java and native code, which makes it hard to maintain. The API in java.util.jar.Pack200 was detrimental to the modularization of the Java SE Platform, leading to the removal of four of its methods in Java SE 9. Overall, the cost of maintaining Pack200 is significant, and outweighs the benefit of including it in Java SE and the JDK.
+
+* Three types in the java.base module will be terminally deprecated, that is, annotated with @Deprecated(forRemoval=true):
+    * java.util.jar.Pack200
+    * java.util.jar.Pack200.Packer
+    * java.util.jar.Pack200.Unpacker
+* The jdk.pack module, which contains the pack200 and unpack200 tools, will also be terminally deprecated.
+* Running pack200 or unpack200 will display a warning about the planned removal of the tool. Running jar -c with the sub-option n (to normalize the archive) will display a warning about the planned removal of the sub-option. The documentation for all three tools will indicate the deprecation and planned removal.
+* A separate JEP will be filed for the actual removal of the types and module in a future JDK feature release.
+
 # Reference : [Java 11](http://openjdk.java.net/projects/jdk/11/)
