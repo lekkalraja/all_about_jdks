@@ -435,6 +435,15 @@ mambo.doFinal(pText, 0, pText.length, encryptedResult);
 * To minimize compatibility risk, this TLS 1.3 implementation will implement and enable the backward-compatibility mode by default. 
 * An application can turn off the backward-compatibility mode, and turn TLS 1.3 on or off if desired.
 
+## JEP 335: Deprecate the Nashorn JavaScript Engine
 
+* Deprecate the Nashorn JavaScript script engine and APIs, and the jjs tool, with the intent to remove them in a future release.
+* The Nashorn JavaScript engine was first incorporated into JDK 8 via JEP 174 as a replacement for the Rhino scripting engine. When it was released, it was a complete implementation of the ECMAScript-262 5.1 standard.
+* With the rapid pace at which ECMAScript language constructs, along with APIs, are adapted and modified, it was found Nashorn challenging to maintain.
+* Two JDK modules will be terminally deprecated, that is, annotated with `@Deprecated(forRemoval=true)`:
+    * jdk.scripting.nashorn -- contains the jdk.nashorn.api.scripting and jdk.nashorn.api.tree packages.
+    * jdk.scripting.nashorn.shell -- contains the jjs tool. Running jjs will display a warning:
+    * `Warning`: The jjs tool is planned to be removed from a future JDK release.
+* A separate JEP will be filed for the actual removal of the types and modules in a future JDK feature release.
 
 # Reference : [Java 11](http://openjdk.java.net/projects/jdk/11/)
