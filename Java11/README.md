@@ -405,4 +405,36 @@ mambo.doFinal(pText, 0, pText.length, encryptedResult);
 
 ```
 
+## JEP 332: Transport Layer Security (TLS) 1.3
+
+* Implements version 1.3 of the Transport Layer Security (TLS) Protocol RFC 8446.
+* TLS 1.3 is a major overhaul of the TLS protocol and provides significant security and performance improvements over previous versions. Several early implementations from other vendors are available already. We need to support TLS 1.3 to remain competitive and keep pace with the latest standard.
+* TLS 1.3 is a new TLS version which supersedes and obsoletes previous versions of TLS including version 1.2 (RFC 5246). It also obsoletes or changes other TLS features such as the OCSP stapling extensions (RFC 6066, RFC 6961), and the session hash and extended master secret extension (RFC 7627).
+* The Java Secure Socket Extension (JSSE) in the JDK provides a framework and a Java implementation of the SSL, TLS, and DTLS protocols. Currently, the JSSE API and JDK implementation supports SSL 3.0, TLS 1.0, TLS 1.1, TLS 1.2, DTLS 1.0 and DTLS 1.2.
+* The primary goal of this JEP is a minimal interoperable and compatible TLS 1.3 implementation. A minimal implementation should support:
+    * Protocol version negotiation
+    * TLS 1.3 full handshake
+    * TLS 1.3 session resumption
+    * TLS 1.3 key and iv update
+    * TLS 1.3 updated OCSP stapling
+    * TLS 1.3 backward compatibility mode
+    * TLS 1.3 required extensions and algorithms
+    * RSASSA-PSS signature algorithms (8146293)
+* No new public APIs are required for the minimal implementation. The following new standard algorithm names are required:
+    * TLS protocol version name: TLSv1.3
+    * javax.net.ssl.SSLContext algorithm name: TLSv1.3
+    * TLS cipher suite names for TLS 1.3: TLS_AES_128_GCM_SHA256, TLS_AES_256_GCM_SHA384.
+    * Additionally, the KRB5 cipher suites will be removed from the JDK because they are no longer considered safe to use.
+
+* TLS 1.3 is not directly compatible with previous versions. Although TLS 1.3 can be implemented with a backward-compatibility mode, there are several compatibility risks when using this mode:
+    * TLS 1.3 uses a half-close policy, while TLS 1.2 and prior versions use a duplex-close policy. For applications that depend on the duplex-close policy, there may be compatibility issues when upgrading to TLS 1.3.
+    * The `signature_algorithms_cert` extension requires that pre-defined signature algorithms are used for certificate authentication. In practice, however, an application may use non-supported signature algorithms.
+    * The DSA signature algorithm is not supported in TLS 1.3. If a server is configured to only use DSA certificates, it cannot upgrade to TLS 1.3.
+    * The supported cipher suites for TLS 1.3 are not the same as TLS 1.2 and prior versions. If an application hard-codes cipher suites which are no longer supported, it may not be able to use TLS 1.3 without modifying the application code.
+
+* To minimize compatibility risk, this TLS 1.3 implementation will implement and enable the backward-compatibility mode by default. 
+* An application can turn off the backward-compatibility mode, and turn TLS 1.3 on or off if desired.
+
+
+
 # Reference : [Java 11](http://openjdk.java.net/projects/jdk/11/)
