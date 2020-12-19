@@ -28,7 +28,7 @@
 * Each nested type is compiled to it's own class file, with different class files `linked` by the value of these attributes.
 * While these attributes are enough for the JVM to determine nestmate-ness.
 * To allow for a broader, more general, notion of nestmates beyond simply java nested types, and for the sake of efficient access control checking, it is proposed to modify the class file format to define `two new attributes`.
-* One nest member (typically the top-level class) is designated as the `NestHost` 
+* One nest member (typically the top-level class) is designated as the `NestHost`
 * Another attribute (NestMembers) to identify the other statically known nest members. Each of the other nest members has an attribute (`NestHost`) to identify it's nest host
 
 #### JVM Access Control for Nestmates
@@ -40,7 +40,7 @@
 
 ```java
     > Output from the NestBasedAcccessControl Class
-    raja@raja-Latitude-3460:~/Documents/coding/all_about_jdks/Java11$ java NestBasedAccessControl 
+    raja@raja-Latitude-3460:~/Documents/coding/all_about_jdks/Java11$ java NestBasedAccessControl
     Inner Class Nest Host : NestBasedAccessControl
     Outer Class Nest Host : NestBasedAccessControl
     Inner Class Nest Members : NestBasedAccessControl  NestBasedAccessControl$InnerClass
@@ -63,7 +63,7 @@
 * This JEP is intended to cover gap by implementing optimized intrinsics for above methods at the same time, while most of the intrinsics are already implemented in the AArch64 port, the current implementation of some intrinsics may not be optimal.
 * Specifically, some intrinsics for AArch64 architectures may benefit from software prefetching instructions, memory address alignment, instructions placement for mult-pipeline CPUs, and the replacement of certain instruction patterns with faster ones or with SIMD instructions.
 * This includes (but is not limited to) such typical operations as String::compareTo, String::indexOf, StringCoding::hasNegatives, Arrays::equals, StringUTF16::compress, StringLatin1::inflate and various checksum claculations.
-  
+
 ## JEP 318: Epsilon: A No-Op Garbage Collector (Experimental)
 
 * A Garbage Collector that handles memory allocaiton but does not implement any actual memory reclamation mechanism. Once the available Java heap is exhausted, the JVM will shut down.
@@ -155,13 +155,13 @@
 * Performance must be on par with Netty and Jetty when used as a client API for HTTP/2.
 * Memory consumption of the new API must be on par or lower than when using HttpURLConnection, Apache HttpClient, and Netty and Jetty when used as a client API.
 * Provide a standardized API, in the java.net.http package, based upon the incubated API, and
-Remove the incubated API. 
+Remove the incubated API.
 
-* The API provides non-blocking request and response semantics through CompletableFutures, which can be chained to trigger dependent actions. 
+* The API provides non-blocking request and response semantics through CompletableFutures, which can be chained to trigger dependent actions.
 * Back-pressure and flow-control of request and response bodies is provided for via the Platform's `reactive-streams` support in the java.util.concurrent.Flow API.
 * The implementation is now completely asynchronous (the previous HTTP/1.1 implementation was blocking)
-* Use of the RX Flow concept has been pushed down into the implementation, which eliminated many of the original custom concepts needed to support HTTP/2. 
-* The flow of data can now be more easily traced, from the user-level request publishers and response subscribers all the way down to the underlying socket. 
+* Use of the RX Flow concept has been pushed down into the implementation, which eliminated many of the original custom concepts needed to support HTTP/2.
+* The flow of data can now be more easily traced, from the user-level request publishers and response subscribers all the way down to the underlying socket.
 * This significantly reduces the number of concepts and complexity in the code, and maximizes the possibility of reuse between HTTP/1.1 and HTTP/2.
 * The module name and the package name of the standard API will be java.net.http.
 
@@ -184,7 +184,7 @@ Remove the incubated API.
     ```java
 
     > java Java11/NewHttpClient.java  => Have Both Sync and Async versions of HttpClient-Get Calls
-    
+
     ```
 
 ##### Alternatives
@@ -207,7 +207,7 @@ Remove the incubated API.
 (var x, var y) -> x.process(y) is equivalent to: (x, y) -> x.process(y)
 ```
 
-* An implicitly typed lambda expression must use var for all its formal parameters or for none of them. In addition, var is permitted only for the formal parameters of implicitly typed lambda expressions --- explicitly typed lambda expressions continue to specify manifest types for all their formal parameters, so it is not permitted for some formal parameters to have manifest types while others use var. 
+* An implicitly typed lambda expression must use var for all its formal parameters or for none of them. In addition, var is permitted only for the formal parameters of implicitly typed lambda expressions --- explicitly typed lambda expressions continue to specify manifest types for all their formal parameters, so it is not permitted for some formal parameters to have manifest types while others use var.
 
 * The following examples are illegal:
 (var x, y) -> x.process(y)         // Cannot mix 'var' and 'no var' in implicitly typed lambda expression
@@ -274,12 +274,12 @@ byte[] secret = ka.generateSecret();
 
 #### Motivation
 * Troubleshooting, monitoring and profiling are integral parts of the development lifecycle, but some problems occur only in production, under heavy load involving real data.
-* Flight Recorder records events originating from applications, the JVM and the OS. Events are stored in a single file that can be attached to bug reports and examined by support engineers, allowing after-the-fact analysis of issues in the period leading up to a problem. 
+* Flight Recorder records events originating from applications, the JVM and the OS. Events are stored in a single file that can be attached to bug reports and examined by support engineers, allowing after-the-fact analysis of issues in the period leading up to a problem.
 * Tools(`Java Mission Control (JMC)`) can use an API to extract information from recording files.
 
 * JEP 167: Event-Based JVM Tracing added an initial set of events to the HotSpot JVM. Flight Recorder will extend the ability to create events to Java.
 * JEP 167 also added a rudimentary backend, where data from events are printed to stdout. Flight Recorder will provide a single high-performance backend for writing events in a binary format.
-  
+
 ##### Modules:
     * jdk.jfr
         * API and internals
@@ -289,7 +289,7 @@ byte[] secret = ka.generateSecret();
         * Requires jdk.jfr and jdk.management
 
 * Flight Recorder can be started on the command line: `$ java -XX:StartFlightRecording ...`
-  
+
 * Recordings may also be started and controlled using the bin/jcmd tool:
 ```shell
 $ jcmd <pid> JFR.start
@@ -334,13 +334,12 @@ for (RecordedEvent e : RecordingFile.readAllEvents(p)) {
 ```
 ##### Buffer mechanism and binary data format
 
-* Threads write events, lock-free, to thread-local buffers. Once a thread-local buffer fills up, it is promoted to a global in-memory circular buffer system which maintains the most recent event data. 
-* Depending on configuration, the oldest data is either discarded or written to disk allowing the history to be continuously saved. 
+* Threads write events, lock-free, to thread-local buffers. Once a thread-local buffer fills up, it is promoted to a global in-memory circular buffer system which maintains the most recent event data.
+* Depending on configuration, the oldest data is either discarded or written to disk allowing the history to be continuously saved.
 * Binary files on disk have the extension `.jfr` and are maintained and controlled using a `retention policy`.
-* The event model is implemented in a self-describing binary format, encoded in little endian base 128 (except for the file header and some additional sections). 
+* The event model is implemented in a self-describing binary format, encoded in little endian base 128 (except for the file header and some additional sections).
 * The binary data format is not to be used directly as it is subject to change. Instead, APIs will be provided for interacting with recording files.
-  
-* As an illustrative example, the class load event contains a time stamp describing when it occurred, a duration describing the timespan, the thread, a stack trace as well as three event specific payload fields, the loaded class and the associated class loaders. 
+* As an illustrative example, the class load event contains a time stamp describing when it occurred, a duration describing the timespan, the thread, a stack trace as well as three event specific payload fields, the loaded class and the associated class loaders.
 * The size of the event is 24 bytes in total.
 
 ```language
@@ -376,7 +375,7 @@ Events will be added covering the following areas:
 - `JDK` : Socket IO, File IO, Exceptions and Errors, modules
 
 * An alternative to Flight Recorder is logging. Although JEP 158: Unified JVM Logging provides some level of uniformity across subsystems in the HotSpot JVM, it does not extend to Java applications and the JDK libraries. Traditionally, logging usually lacks an explicit model and metadata making it free form with the consequence that consumers must be tightly coupled to internal formats. Without a relational model, it is difficult to keep data compact and normalized.
-  
+
 * Flight Recorder has existed for many years and was previously a commercial feature of the Oracle JDK. This JEP moves the source code to the open repository to make the feature generally available. Hence, the risk to compatibility, performance, regressions and stability is low.
 
 ## JEP 329: ChaCha20 and Poly1305 Cryptographic Algorithms
@@ -432,7 +431,7 @@ mambo.doFinal(pText, 0, pText.length, encryptedResult);
     * The DSA signature algorithm is not supported in TLS 1.3. If a server is configured to only use DSA certificates, it cannot upgrade to TLS 1.3.
     * The supported cipher suites for TLS 1.3 are not the same as TLS 1.2 and prior versions. If an application hard-codes cipher suites which are no longer supported, it may not be able to use TLS 1.3 without modifying the application code.
 
-* To minimize compatibility risk, this TLS 1.3 implementation will implement and enable the backward-compatibility mode by default. 
+* To minimize compatibility risk, this TLS 1.3 implementation will implement and enable the backward-compatibility mode by default.
 * An application can turn off the backward-compatibility mode, and turn TLS 1.3 on or off if desired.
 
 ## JEP 335: Deprecate the Nashorn JavaScript Engine
@@ -464,4 +463,143 @@ mambo.doFinal(pText, 0, pText.length, encryptedResult);
 * Running pack200 or unpack200 will display a warning about the planned removal of the tool. Running jar -c with the sub-option n (to normalize the archive) will display a warning about the planned removal of the sub-option. The documentation for all three tools will indicate the deprecation and planned removal.
 * A separate JEP will be filed for the actual removal of the types and module in a future JDK feature release.
 
-# Reference : [Java 11](http://openjdk.java.net/projects/jdk/11/)
+## JEP 331: Low-Overhead Heap Profiling
+* Provides a low-overhead way of sampling Java heap allocations, accessible via `JVMTI`.
+* Provides a way to get information about Java object heap allocations from the JVM that:
+    * Is low-overhead enough to be enabled by default continuously,
+    * Is accessible via a well-defined, programmatic interface,
+    * Can sample all allocations (i.e., is not limited to allocations that are in one particular heap region or that were allocated in one particular way),
+    * Can be defined in an implementation-independent way (i.e., without relying on any particular GC algorithm or VM implementation), and
+    * Can give information about both live and dead Java objects.
+
+* There is a deep need for users to understand the contents of their heaps. Poor heap management can lead to problems such as heap exhaustion and GC thrashing. As a result, a number of tools have been developed to allow users to introspect into their heaps, such as the Java Flight Recorder, jmap, YourKit, and VisualVM tools.
+* One piece of information that is lacking from most of the existing tooling is the call site for particular allocations. Heap dumps and heap histograms do not contain this information. This information can be critical to debugging memory issues, because it tells developers the exact location in their code particular (and particularly bad) allocations occurred.
+* There are currently two ways of getting this information out of HotSpot:
+    * First, you can instrument all of the allocations in your application using a bytecode rewriter such as the [Allocation Instrumenter](https://github.com/google/allocation-instrumenter). You can then have the instrumentation take a stack trace (when you want one).
+    * Second, you can use Java Flight Recorder, which takes a stack trace on TLAB refills and when allocating directly into the old generation. The downsides of this are that
+        * a) it is tied to a particular allocation implementation (TLABs),and misses allocations that don’t meet that pattern;
+        * b) it doesn’t allow the user to customize the sampling interval; and
+        * c) it only logs allocations, so you cannot distinguish between live and dead objects.
+
+* This proposal mitigates these problems by providing an extensible `JVMTI interface` that allows the user to define the sampling interval and returns a set of live stack traces.
+
+##### New JVMTI event and method
+* The user facing API for the heap sampling feature proposed here consists of an extension to JVMTI that allows for heap profiling. The following systems rely on an event notification system that would provide a callback such as:
+ ```java
+void JNICALL
+SampledObjectAlloc(jvmtiEnv *jvmti_env,
+            JNIEnv* jni_env,
+            jthread thread,
+            jobject object,
+            jclass object_klass,
+            jlong size)
+
+    where:
+        thread is the thread allocating the jobject,
+        object is the reference to the sampled jobject,
+        object_klass is the class for the jobject, and
+        size is the size of the allocation.
+ ```
+* The new API also includes a single new JVMTI method:
+    * `jvmtiError  SetHeapSamplingInterval(jvmtiEnv* env, jint sampling_interval)`
+        * where `sampling_interval` is the average allocated bytes between a sampling.
+* The specification of the method is:
+    * If non zero, the sampling interval is updated and will send a callback to the user with the new average sampling interval of sampling_interval bytes
+    * For example, if the user wants a sample every megabyte, sampling_interval would be 1024 * 1024.
+    * If zero is passed to the method, the sampler samples every allocation once the new interval is taken into account, which might take a certain number of allocations
+* Note that the sampling interval is not precise. Each time a sample occurs, the number of bytes before the next sample will be chosen will be pseudo-random with the given average interval. This is to avoid sampling bias; for example, if the same allocations happen every 512KB, a 512KB sampling interval will always sample the same allocations. Therefore, though the sampling interval will not always be the selected interval, after a large number of samples, it will tend towards it.
+
+#### Use-case example
+* To enable this, a user would use the usual event notification call to:
+    * `jvmti->SetEventNotificationMode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL)`
+* The event will be sent when the allocation is initialized and set up correctly, so slightly after the actual code performs the allocation. By default, the average sampling interval is 512KB.
+* The minimum required to enable the sampling event system is to call `SetEventNotificationMode with JVMTI_ENABLE` and the `event type JVMTI_EVENT_SAMPLED_OBJECT_ALLOC`. To modify the sampling interval, the user calls the `SetHeapSamplingInterval` method.
+
+* To disable the system,
+    * `jvmti->SetEventNotificationMode(jvmti, JVMTI_DISABLE, JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL)` disables the event notifications and disables the sampler automatically.
+* Calling the sampler again via SetEventNotificationMode will re-enable the sampler with whatever sampling interval was currently set (either 512KB by default or the last value passed by a user via SetHeapSamplingInterval)
+
+#### New capability
+* To protect the new feature and make it optional for VM implementations, a new capability named `can_generate_sampled_object_alloc_events` is introduced into the `jvmtiCapabilities`.
+
+#### Global / thread level sampling
+* Using the notification system provides a direct means to send events only for specific threads. This is done via `SetEventNotificationMode` and providing a third parameter with the threads to be modified.
+
+#### A full example
+* The following section provides code snippets to illustrate the sampler's API. First, the capability and the event notification is enabled:
+
+```java
+jvmtiEventCallbacks callbacks;
+memset(&callbacks, 0, sizeof(callbacks));
+callbacks.SampledObjectAlloc = &SampledObjectAlloc;
+
+jvmtiCapabilities caps;
+memset(&caps, 0, sizeof(caps));
+caps.can_generate_sampled_object_alloc_events = 1;
+if (JVMTI_ERROR_NONE != (*jvmti)->AddCapabilities(jvmti, &caps)) {
+  return JNI_ERR;
+}
+
+if (JVMTI_ERROR_NONE != (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_ENABLE,
+                                       JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL)) {
+  return JNI_ERR;
+}
+
+if (JVMTI_ERROR_NONE !=  (*jvmti)->SetEventCallbacks(jvmti, &callbacks, sizeof(jvmtiEventCallbacks)) {
+  return JNI_ERR;
+}
+
+// Set the sampler to 1MB.
+if (JVMTI_ERROR_NONE !=  (*jvmti)->SetHeapSamplingInterval(jvmti, 1024 * 1024)) {
+  return JNI_ERR;
+}
+To disable the sampler (disables events and the sampler):
+
+if (JVMTI_ERROR_NONE != (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_DISABLE,
+                                       JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL)) {
+  return JNI_ERR;
+}
+To re-enable the sampler with the 1024 * 1024 byte sampling interval , a simple call to enabling the event is required:
+
+if (JVMTI_ERROR_NONE != (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_ENABLE,
+                                       JVMTI_EVENT_SAMPLED_OBJECT_ALLOC, NULL)) {
+  return JNI_ERR;
+}
+
+```
+#### User storage of sampled allocations
+* When an event is generated, the callback can capture a stack trace using the JVMTI GetStackTrace method. The jobject reference obtained by the callback can be also wrapped into a JNI weak reference to help determine when the object has been garbage collected. This approach allows the user to gather data on what objects were sampled, as well as which are still considered live, which can be a good means to understand the job's behavior.
+
+* For example, something like this could be done:
+
+```java
+extern "C" JNIEXPORT void JNICALL SampledObjectAlloc(jvmtiEnv *env,
+                                                     JNIEnv* jni,
+                                                     jthread thread,
+                                                     jobject object,
+                                                     jclass klass,
+                                                     jlong size) {
+  jvmtiFrameInfo frames[32];
+  jint frame_count;
+  jvmtiError err;
+
+  err = global_jvmti->GetStackTrace(NULL, 0, 32, frames, &frame_count);
+  if (err == JVMTI_ERROR_NONE && frame_count >= 1) {
+    jweak ref = jni->NewWeakGlobalRef(object);
+    internal_storage.add(jni, ref, size, thread, frames, frame_count);
+  }
+}
+```
+* where `internal_storage` is a data structure that can handle the sampled objects, consider if there is a need to clean up any garbage collected sample, etc. The internals of that implementation are usage-specific, and out of scope of this JEP.
+* The sampling interval can be used as a means to mitigate profiling overhead. With a sampling interval of 512KB, the overhead should be low eno
+
+#### Implementation details
+* The current prototype and implementation proves the feasibility of the approach. It contains five parts:
+  * Architecture dependent changes due to a change of a field name in the ThreadLocalAllocationBuffer (TLAB) structure. These changes are minimal as they are just name changes.
+  * The TLAB structure is augmented with a `new allocation_end pointer`, to complement the existing end pointer. If the sampling is disabled, the two pointers are always equal and the code performs as before. If the sampling is enabled, end is modified to be where the next sample point is requested. Then, any fast path will "think" the TLAB is full at that point and go down the slow path, which is explained in (3).
+  * The gc/shared/collectedHeap code is changed due to its usage as an entry point to the allocation slow path. When a TLAB is considered full (because allocation has passed the end pointer), the code enters collectedHeap and tries to allocate a new TLAB. At this point, the TLAB is set back to its original size and an allocation is attempted. If the allocation succeeds, the code samples the allocation, and then returns. If it does not, it means allocation has reached the end of the TLAB, and a new TLAB is needed. The code path continues its normal allocation of a new TLAB and determines if that allocation requires a sample. If the allocation is considered too big for the TLAB, the system samples the allocation as well, thus covering in TLAB and out of TLAB allocations for sampling.
+  * When a sample is requested, there is a collector object set on the stack in a place safe for sending the information to the native agent. The collector keeps track of sampled allocations and, at destruction of its own frame, sends a callback to the agent. This mechanism ensures the object is initialized correctly.
+  * If a JVMTI agent has registered a callback for the SampledObjectAlloc event, the event will be triggered and it will obtain sampled allocations. An example implementation can be found in the `libHeapMonitorTest.c` file, which is used for JTreg testing.
+
+
+## Reference : [Java 11](http://openjdk.java.net/projects/jdk/11/)
