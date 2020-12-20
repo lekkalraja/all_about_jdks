@@ -1,5 +1,6 @@
 # All About JDK's
 
+* `JLS - Java Language Specification`
 * `JEP - JDK Enhancement Proposals` :  [JEPS](https://openjdk.java.net/jeps/0)
 
 ## Releases
