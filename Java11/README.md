@@ -601,5 +601,82 @@ extern "C" JNIEXPORT void JNICALL SampledObjectAlloc(jvmtiEnv *env,
   * When a sample is requested, there is a collector object set on the stack in a place safe for sending the information to the native agent. The collector keeps track of sampled allocations and, at destruction of its own frame, sends a callback to the agent. This mechanism ensures the object is initialized correctly.
   * If a JVMTI agent has registered a callback for the SampledObjectAlloc event, the event will be triggered and it will obtain sampled allocations. An example implementation can be found in the `libHeapMonitorTest.c` file, which is used for JTreg testing.
 
+## JEP 333: ZGC: A Scalable Low-Latency Garbage Collector (Experimental)
 
+* The Z Garbage Collector, also known as ZGC, is a scalable low-latency garbage collector.
+##### Goals
+  * GC pause times should not exceed 10ms
+  * Handle heaps ranging from relatively small (a few hundreds of megabytes) to very large (many terabytes) in size
+  * No more than 15% application throughput reduction compared to using G1
+  * Lay a foundation for future GC features and optimizations leveraging colored pointers and load barriers
+  * Initially supported platform: Linux/x64
+* Garbage collection is one of Java's main strengths. However, when garbage collection pauses become too long they start to affect application response times negatively. By removing or drastically reducing the length of GC pauses, we'll make Java a more attractive platform for an even wider set of applications.
+* Furthermore, the amount of memory available in modern systems continues to grow. Users and application developers expect the JVM to be equipped to take full advantage of this memory in an efficient manner, and without long GC pause times.
+
+* At a glance, `ZGC is a concurrent, single-generation, region-based, NUMA-aware, compacting collector`. Stop-the-world phases are limited to root scanning, so GC pause times do not increase with the size of the heap or the live set.
+* A core design principle/choice in ZGC is the use of load barriers in combination with colored object pointers (i.e., colored oops). This is what enables ZGC to do concurrent operations, such as object relocation, while Java application threads are running.
+* From a Java thread's perspective, the act of loading a reference field in a Java object is subject to a load barrier. In addition to an object address, a colored object pointer contains information used by the load barrier to determine if some action needs to be taken before allowing a Java thread to use the pointer. For example, the object might have been relocated, in which case the load barrier will detect the situation and take appropriate action.
+* Compared to alternative techniques, we believe the colored-pointers scheme offers some very attractive properties. In particular:
+    * It allows us to reclaim and reuse memory during the relocation/compaction phase, before pointers pointing into the reclaimed/reused regions have been fixed. This helps keep the general heap overhead down. It also means that there is no need to implement a separate mark-compact algorithm to handle a full GC.
+    * It allows us to have relatively few and simple GC barriers. This helps keep the runtime overhead down. It also means that it's easier to implement, optimize and maintain the GC barrier code in our interpreter and JIT compilers.
+    * We currently store marking and relocation related information in the colored pointers. However, the versatile nature of this scheme allows us to store any type of information (as long as we can fit it into the pointer) and let the load barrier take any action it wants to based on that information. We believe this will lay the foundation for many future features. 
+    * To pick one example, in a heterogeneous memory environment, this could be used to track heap access patterns to guide GC relocation decisions to move rarely used objects to cold storage.
+
+###### Performance
+* Regular performance measurements have been done using SPECjbb® 2015. Performance is looking good, both from a throughput and latency point of view. Below are typical benchmark scores (in percent, normalized against ZGC's max-jOPS), comparing ZGC and G1, in composite mode using a 128G heap.
+
+```java
+
+(Higher is better)
+
+ZGC
+       max-jOPS: 100%
+  critical-jOPS: 76.1%
+
+G1
+       max-jOPS: 91.2%
+  critical-jOPS: 54.7%
+
+```
+
+* Below are typical GC pause times from the same benchmark. ZGC manages to stay well below the 10ms goal. Note that exact numbers can vary (both up and down, but not significantly) depending on the exact machine and setup used.
+
+```java
+
+(Lower is better)
+
+ZGC
+                avg: 1.091ms (+/-0.215ms)
+    95th percentile: 1.380ms
+    99th percentile: 1.512ms
+  99.9th percentile: 1.663ms
+ 99.99th percentile: 1.681ms
+                max: 1.681ms
+
+G1
+                avg: 156.806ms (+/-71.126ms)
+    95th percentile: 316.672ms
+    99th percentile: 428.095ms
+  99.9th percentile: 543.846ms
+ 99.99th percentile: 543.846ms
+                max: 543.846ms
+```
+
+* Ad-hoc performance measurements have also been done on various other SPEC® benchmarks and internal workloads. In general, ZGC manages to maintain single-digit millisecond pause times.
+* [1] SPECjbb® 2015 is a registered trademark of the Standard Performance Evaluation Corporation (spec.org). The actual results are not represented as compliant because the SUT may not meet SPEC's requirements for general availability.
+
+##### Limitations
+* The initial experimental version of ZGC will not have support for class unloading. The ClassUnloading and ClassUnloadingWithConcurrentMark options will be disabled by default. Enabling them will have no effect.
+* Also, ZGC will initially not have support for JVMCI (i.e. Graal). An error message will be printed if the EnableJVMCI option is enabled.
+* These limitations will be addressed at a later stage in this project.
+
+##### Building and Invoking
+* By convention, experimental features in the JVM are disabled by default by the build system. ZGC, being an experimental feature, will therefore not be present in a JDK build unless explicitly enabled at compile-time using the configure option `--with-jvm-features=zgc`.(ZGC will be present in all Linux/x64 JDK builds produced by Oracle)
+* Experimental features in the JVM also need to be explicitly unlocked at run-time. To enable/use ZGC, the following JVM options will therefore be needed: `-XX:+UnlockExperimentalVMOptions` `-XX:+UseZGC`.
+* Please see the [ZGC Project Wiki]([https://link](https://wiki.openjdk.java.net/display/zgc/Main)) for more information on how to setup and tune ZGC.
+##### Alternatives
+* An obvious alternative is to add concurrent compaction capabilities to G1. This alternative was extensively prototyped but eventually abandoned. We found it unfeasible to shoehorn this functionality into a code base that was never designed for this purpose and, at the same time, preserve G1's stability and other good properties.
+* A theoretical alternative would be to improve CMS one way or another. There are however several reasons why basing a low latency collector on the CMS algorithm is neither an attractive nor viable option. Reasons include no support for compaction, the unbound remark phase, a complicated code base, and the fact that it has already been deprecated (JEP 291).
+* The Shenandoah Project is exploring the use of Brooks pointers to achieve concurrent operations (JEP 189).
+  
 ## Reference : [Java 11](http://openjdk.java.net/projects/jdk/11/)
